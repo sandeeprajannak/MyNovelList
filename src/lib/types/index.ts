@@ -46,6 +46,7 @@ export interface NovelInput {
 export interface ProgressInput {
 	status?: NovelStatus;
 	current_chapter?: number;
+	total_chapters?: number;
 	score?: number;
 	notes?: string;
 	started_at?: string;

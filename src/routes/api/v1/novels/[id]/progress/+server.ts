@@ -171,7 +171,25 @@ export const PUT: RequestHandler = async ({ request, params }) => {
 		return json({ success: false, error: error.message }, { status: 500 });
 	}
 
-	return json({ success: true, data: progress });
+	// total_chapters is a fact about the source material, not user-owned progress,
+	// so any tracker reporting it can update it here (unlike novels.* metadata,
+	// which is restricted to the creator via PUT/PATCH /api/v1/novels/:id).
+	let total_chapters: number | undefined;
+	if (body.total_chapters !== undefined) {
+		const { data: novel, error: novelError } = await supabaseAdmin
+			.from('novels')
+			.update({ total_chapters: body.total_chapters, updated_at: new Date().toISOString() })
+			.eq('id', params.id)
+			.select('total_chapters')
+			.single();
+
+		if (novelError) {
+			return json({ success: false, error: novelError.message }, { status: 500 });
+		}
+		total_chapters = novel.total_chapters;
+	}
+
+	return json({ success: true, data: { ...progress, total_chapters } });
 };
 
 // DELETE /api/v1/novels/:id/progress - Remove from library
